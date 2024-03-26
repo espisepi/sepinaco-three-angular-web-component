@@ -1,186 +1,147 @@
-Crear web components con Angular implica aprovechar Angular Elements, que permite empaquetar componentes Angular como elementos personalizados estándar, facilitando su uso en cualquier aplicación HTML, incluyendo Shopify. A continuación, detallo cómo crear web components para un contador y un banner utilizando Angular.
+ahora creame un web component para el contador y otro web component para el banner y utlizalo en un template liquid de shopify
 
-### Paso 1: Preparar tu proyecto Angular para Angular Elements
+Crear web components para utilizar en un entorno como Shopify a través de Liquid templates es un proceso interesante que combina el desarrollo web moderno con sistemas de gestión de contenido. A continuación, te guiaré a través del proceso de crear dos web components: uno para un contador y otro para un banner de imágenes, y cómo insertarlos en un template Liquid de Shopify.
 
-1. **Crear un nuevo proyecto Angular (si aún no lo has hecho)**:
-   ```bash
-   ng new angular-web-components
-   cd angular-web-components
-   ```
-
-2. **Añadir Angular Elements y polyfills para elementos personalizados**:
-   ```bash
-   ng add @angular/elements
-   npm install @webcomponents/custom-elements --save
-   ```
-
-3. **Modificar `polyfills.ts`** para incluir los polyfills necesarios para elementos personalizados, especialmente para soporte en navegadores que no implementan la API de Custom Elements nativamente:
-   ```typescript
-   import '@webcomponents/custom-elements/src/native-shim';
-   import '@webcomponents/custom-elements/custom-elements.min';
-   ```
-
-### Paso 2: Crear Componentes Angular
+### Paso 1: Crear Web Components
 
 #### Contador Component
 
-1. **Generar el componente**:
-   ```bash
-   ng generate component contador
-   ```
+Archivo: `contador-component.js`
 
-2. **Modificar `contador.component.ts`** para implementar la lógica del contador:
-   ```typescript
-   import { Component, ViewEncapsulation } from '@angular/core';
+```javascript
+class ContadorComponent extends HTMLElement {
+    constructor() {
+        super();
+        this.shadow = this.attachShadow({mode: 'open'});
+        this.count = 0;
+        this.render();
+    }
 
-   @Component({
-     selector: 'app-contador',
-     template: `
-       <div>
-         <h2>Contador: {{ count }}</h2>
-         <button (click)="increment()">Incrementar</button>
-         <button (click)="decrement()">Decrementar</button>
-       </div>
-     `,
-     styleUrls: ['./contador.component.css'],
-     encapsulation: ViewEncapsulation.ShadowDom, // Esto encapsula los estilos
-   })
-   export class ContadorComponent {
-     count = 0;
+    connectedCallback() {
+        this.shadow.querySelector('#incrementar').addEventListener('click', () => this.increment());
+        this.shadow.querySelector('#decrementar').addEventListener('click', () => this.decrement());
+    }
 
-     increment() {
-       this.count++;
-     }
+    disconnectedCallback() {
+        this.shadow.querySelector('#incrementar').removeEventListener('click');
+        this.shadow.querySelector('#decrementar').removeEventListener('click');
+    }
 
-     decrement() {
-       this.count--;
-     }
-   }
-   ```
+    increment() {
+        this.count++;
+        this.render();
+    }
+
+    decrement() {
+        this.count--;
+        this.render();
+    }
+
+    render() {
+        this.shadow.innerHTML = `
+            <style>
+                /* Estilos básicos para el contador */
+                div {
+                    margin: 10px;
+                    text-align: center;
+                }
+                button {
+                    margin: 5px;
+                }
+            </style>
+            <div>
+                <h2>Contador: ${this.count}</h2>
+                <button id="incrementar">Incrementar</button>
+                <button id="decrementar">Decrementar</button>
+            </div>
+        `;
+    }
+}
+
+customElements.define('contador-component', ContadorComponent);
+```
 
 #### Banner Component
 
-1. **Generar el componente**:
-   ```bash
-   ng generate component banner
-   ```
+Archivo: `banner-component.js`
 
-2. **Modificar `banner.component.ts`** para implementar el banner:
-   ```typescript
-   import { Component, Input, ViewEncapsulation } from '@angular/core';
+```javascript
+class BannerComponent extends HTMLElement {
+    constructor() {
+        super();
+        this.shadow = this.attachShadow({mode: 'open'});
+        this.images = JSON.parse(this.getAttribute('images'));
+        this.currentImageIndex = 0;
+        this.render();
+    }
 
-   @Component({
-     selector: 'app-banner',
-     template: `
-       <div>
-         <img [src]="images[currentImage]" style="width: 100%;">
-         <button (click)="prev()">Anterior</button>
-         <button (click)="next()">Siguiente</button>
-       </div>
-     `,
-     styleUrls: ['./banner.component.css'],
-     encapsulation: ViewEncapsulation.ShadowDom,
-   })
-   export class BannerComponent {
-     @Input() images: string[] = [];
-     currentImage = 0;
+    connectedCallback() {
+        this.shadow.querySelector('#next').addEventListener('click', () => this.next());
+        this.shadow.querySelector('#prev').addEventListener('click', () => this.prev());
+    }
 
-     next() {
-       this.currentImage = (this.currentImage + 1) % this.images.length;
-     }
+    disconnectedCallback() {
+        this.shadow.querySelector('#next').removeEventListener('click');
+        this.shadow.querySelector('#prev').removeEventListener('click');
+    }
 
-     prev() {
-       if (this.currentImage === 0) {
-         this.currentImage = this.images.length - 1;
-       } else {
-         this.currentImage--;
-       }
-     }
-   }
-   ```
+    next() {
+        this.currentImageIndex = (this.currentImageIndex + 1) % this.images.length;
+        this.render();
+    }
 
-### Paso 3: Convertir Componentes en Web Components
+    prev() {
+        this.currentImageIndex = (this.currentImageIndex - 1 + this.images.length) % this.images.length;
+        this.render();
+    }
 
-1. **Modificar `app.module.ts`** para definir y registrar los elementos personalizados. Necesitarás importar `createCustomElement` desde `@angular/elements` y registrar los componentes dentro del método `ngDoBootstrap` del módulo:
-   ```typescript
-   import { BrowserModule } from '@angular/platform-browser';
-   import { NgModule, Injector } from '@angular/core';
-   import { createCustomElement } from '@angular/elements';
-   import { ContadorComponent } from './contador/contador.component';
-   import { BannerComponent } from './banner/banner.component';
+    render() {
+        this.shadow.innerHTML = `
+            <style>
+                /* Estilos básicos para el banner */
+                img {
+                    width: 100%;
+                    display: block;
+                }
+                .controls {
+                    text-align: center;
+                }
+            </style>
+            <div>
+                <img src="${this.images[this.currentImageIndex]}">
+                <div class="controls">
+                    <button id="prev">Anterior</button>
+                    <button id="next">Siguiente</button>
+                </div>
+            </div>
+        `;
+    }
+}
 
-   @NgModule({
-     declarations: [
-       ContadorComponent,
-       BannerComponent
-     ],
-     imports: [
-       BrowserModule
-     ],
-     providers: [],
-     bootstrap: [],
-     entryComponents: [ContadorComponent, BannerComponent] // Asegúrate de añadir tus componentes aquí
-   })
-   export class AppModule {
-     constructor(private injector: Injector) {}
+customElements.define('banner-component', BannerComponent);
+```
 
-     ngDoBootstrap() {
-       const contadorEl = createCustomElement(ContadorComponent, { injector: this.injector });
-       customElements.define('contador-component', contadorEl);
+### Paso 2: Utilizar los Web Components en Shopify
 
-       const bannerEl = createCustomElement(BannerComponent, { injector: this.injector });
-       customElements.define('banner-component', bannerEl);
-     }
-   }
-   ```
+Para utilizar estos web components en Shopify:
 
-2. **Construir y empaquetar tu aplicación Angular**. Debes configurar tu proyecto para construir y empaquetar los componentes como elementos web. Esto podría involucrar configuraciones adicionales para tu `angular.json` y scripts de
+1. **Sube los archivos JS a tu servidor de Shopify**: Puedes hacerlo accediendo a la sección de "Archivos" en tu panel de administración de Shopify y subiendo los archivos `contador-component.js` y `banner-component.js`. Copia las URLs proporcionadas tras subirlos.
 
-build específicos para manejar la salida y asegurarse de que los componentes se empaqueten correctamente como web components.
+2. **Incluye los Web Components en tu tema de Shopify**:
+    - Edita tu tema de Shopify para incluir los archivos JS. Esto se hace típicamente modificando el archivo `theme.liquid` para incluir los scripts externos.
+    
+    ```liquid
+    {{ 'https://url-a-tu-archivo/contador-component.js' | script_tag }}
+    {{ 'https://url-a-tu-archivo/banner-component.js' | script_tag }}
+    ```
 
-Para completar el proceso de construcción y empaquetado, sigamos con el paso 3, enfocándonos en cómo construir y utilizar tus web components en un entorno externo, como un template Liquid en Shopify.
+    - En el lugar del template Liquid donde quieras insertar los componentes, simplemente añade las etiquetas personalizadas:
+    
+    ```html
+    <contador-component></contador-component>
+    <banner-component images='["https://url-a-imagen1.jpg", "https://url-a-imagen2.jpg"]'></banner-component>
+    ```
 
-### Paso 3 (continuación): Construir y Empaquetar los Web Components
+### Nota Importante
 
-Para empaquetar tus componentes para producción, necesitarás hacer algunos ajustes para asegurarte de que Angular incluya todo en un solo bundle, facilitando su uso en cualquier plataforma.
-
-#### Configuración de Angular para Web Components
-
-1. **Modificar `angular.json`** para crear un nuevo target de construcción que optimice el bundle para su uso como web component. Esto puede implicar la desactivación de la generación de chunks separados, entre otros ajustes de optimización. Sin embargo, para proyectos pequeños o demostraciones, la configuración estándar de construcción puede ser suficiente.
-
-2. **Construir tu proyecto Angular** para producción. Utiliza el siguiente comando para generar tu build, asegurándote de ajustar cualquier configuración específica necesaria para tus web components:
-   ```bash
-   ng build --prod
-   ```
-   Esto generará una carpeta `dist/` con tu aplicación Angular construida. Para tus web components, es posible que solo necesites los archivos `.js` generados.
-
-### Paso 4: Utilizar los Web Components en Shopify
-
-Una vez que tengas tus web components construidos y empaquetados, el siguiente paso es utilizarlos en tu sitio de Shopify.
-
-1. **Sube los archivos JavaScript a Shopify**: Utiliza la sección de "Archivos" en tu panel de administración de Shopify para subir los archivos `.js` de tus web components. Copia las URLs proporcionadas después de subirlos.
-
-2. **Edita tu tema de Shopify para incluir los web components**:
-   - Edita el archivo `theme.liquid` o el archivo de template específico donde deseas incluir tus web components. Necesitarás añadir etiquetas `<script>` que apunten a las URLs de tus archivos `.js` subidos en el paso anterior.
-
-   ```liquid
-   {{ 'https://url-de-tu-archivo/contador-component.js' | script_tag }}
-   {{ 'https://url-de-tu-archivo/banner-component.js' | script_tag }}
-   ```
-
-3. **Inserta los web components en tu template Liquid**:
-   - Ahora puedes usar las etiquetas de tus componentes personalizados directamente en tu HTML/Liquid como si fueran cualquier otra etiqueta HTML.
-
-   ```html
-   <contador-component></contador-component>
-   <banner-component></banner-component>
-   ```
-
-   Si tu `banner-component` requiere imágenes como entrada, asegúrate de modificar el componente para aceptarlas como atributos o encuentra una manera de pasarle los datos necesarios.
-
-### Notas Finales
-
-- **Depuración y Pruebas**: Asegúrate de probar tus web components extensivamente tanto en un entorno de desarrollo como directamente en Shopify para asegurar su correcto funcionamiento.
-- **CORS (Cross-Origin Resource Sharing)**: Si tus web components necesitan acceder a recursos alojados en otros dominios (por ejemplo, APIs o imágenes), asegúrate de que se configuren adecuadamente las políticas CORS para evitar problemas de seguridad o acceso.
-
-Crear y utilizar web components con Angular en Shopify es un proceso avanzado que abre muchas posibilidades para personalizar e integrar funcionalidades modernas de frontend en plataformas de comercio electrónico. Este enfoque combina lo mejor de ambos mundos: la potencia y la flexibilidad del desarrollo web moderno con la conveniencia y la facilidad de uso de Shopify.
+Cuando insertes código JavaScript en Shopify, ten en cuenta que Shopify utiliza un sistema de plantillas llamado Liquid, que tiene su propia sintaxis. Asegúrate de que tu JavaScript no interfiera con la sintaxis de Liquid.
