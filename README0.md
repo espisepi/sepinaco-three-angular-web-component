@@ -1,3 +1,5 @@
+dame un ejemplo de un proyecto angular en donde se crean dos componentes webs, uno es un contador y el otro un banner de imagenes
+
 Claro, te puedo dar un ejemplo básico de cómo estructurar un proyecto Angular con dos componentes: un contador y un banner de imágenes. Este ejemplo asume que ya tienes un proyecto Angular creado y listo para usar. Si no es así, primero necesitas instalar Angular CLI y crear un nuevo proyecto con `ng new nombre-del-proyecto`.
 
 ### Paso 1: Crear los componentes
