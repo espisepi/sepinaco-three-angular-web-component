@@ -1,0 +1,121 @@
+{
+  "$schema": "./node_modules/@angular/cli/lib/config/schema.json",
+  "version": 1,
+  "newProjectRoot": "projects",
+  "projects": {
+    "my-library": {
+      "projectType": "library",
+      "root": "projects/my-library",
+      "sourceRoot": "projects/my-library/src",
+      "prefix": "lib",
+      "architect": {
+        "build": {
+          "builder": "@angular-devkit/build-angular:ng-packagr",
+          "options": {
+            "project": "projects/my-library/ng-package.json"
+          },
+          "configurations": {
+            "production": {
+              "tsConfig": "projects/my-library/tsconfig.lib.prod.json"
+            },
+            "development": {
+              "tsConfig": "projects/my-library/tsconfig.lib.json"
+            }
+          },
+          "defaultConfiguration": "production"
+        },
+        "test": {
+          "builder": "@angular-devkit/build-angular:karma",
+          "options": {
+            "tsConfig": "projects/my-library/tsconfig.spec.json",
+            "polyfills": ["zone.js", "zone.js/testing"]
+          }
+        }
+      }
+    },
+    "my-library-web-components": {
+      "projectType": "application",
+      "schematics": {
+        "@schematics/angular:component": {
+          "style": "scss"
+        }
+      },
+      "root": "projects/my-library-web-components",
+      "sourceRoot": "projects/my-library-web-components/src",
+      "prefix": "app",
+      "architect": {
+        "build": {
+          "builder": "@angular-devkit/build-angular:application",
+          "options": {
+            "outputPath": "dist/my-library-web-components",
+            "index": "projects/my-library-web-components/src/index.html",
+            "browser": "projects/my-library-web-components/src/main.ts",
+            "polyfills": ["zone.js"],
+            "tsConfig": "projects/my-library-web-components/tsconfig.app.json",
+            "inlineStyleLanguage": "scss",
+            "assets": [
+              "projects/my-library-web-components/src/favicon.ico",
+              "projects/my-library-web-components/src/assets"
+            ],
+            "styles": ["projects/my-library-web-components/src/styles.scss"],
+            "scripts": []
+          },
+          "configurations": {
+            "production": {
+              "budgets": [
+                {
+                  "type": "initial",
+                  "maximumWarning": "500kb",
+                  "maximumError": "1mb"
+                },
+                {
+                  "type": "anyComponentStyle",
+                  "maximumWarning": "2kb",
+                  "maximumError": "4kb"
+                }
+              ]
+            },
+            "development": {
+              "optimization": false,
+              "extractLicenses": false,
+              "sourceMap": true
+            }
+          },
+          "defaultConfiguration": "production"
+        },
+        "serve": {
+          "builder": "@angular-devkit/build-angular:dev-server",
+          "configurations": {
+            "production": {
+              "buildTarget": "my-library-web-components:build:production"
+            },
+            "development": {
+              "buildTarget": "my-library-web-components:build:development"
+            }
+          },
+          "defaultConfiguration": "development"
+        },
+        "extract-i18n": {
+          "builder": "@angular-devkit/build-angular:extract-i18n",
+          "options": {
+            "buildTarget": "my-library-web-components:build"
+          }
+        },
+        "test": {
+          "builder": "@angular-devkit/build-angular:karma",
+          "options": {
+            "polyfills": ["zone.js", "zone.js/testing"],
+            "tsConfig": "projects/my-library-web-components/tsconfig.spec.json",
+            "inlineStyleLanguage": "scss",
+            "assets": [
+              "projects/my-library-web-components/src/favicon.ico",
+              "projects/my-library-web-components/src/assets"
+            ],
+            "styles": ["projects/my-library-web-components/src/styles.scss"],
+            "scripts": []
+          }
+        }
+      }
+    }
+  }
+}
