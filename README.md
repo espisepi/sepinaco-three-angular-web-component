@@ -6,3 +6,5 @@ ng build my-library --configuration production
 
 ng build my-library-web-components --configuration production
 
+remove "outputHashing":"all" from angular.json
+
